@@ -36,7 +36,7 @@ RUN python -m pip install -e segment_anything
 
 EXPOSE 3000
 
-# Default CMD launches the FastAPI server
-CMD ["uvicorn", "api.server:app", "--host", "0.0.0.0", "--port", "3000"]
+# Default CMD: Runpod Serverless handler (no blocking web server)
+CMD ["python", "-m", "runpod", "--handler-path", "runpod/handler.py"]
 
 
