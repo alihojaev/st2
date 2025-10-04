@@ -93,6 +93,7 @@ def handler(event: Dict[str, Any]) -> Dict[str, Any]:
         guidance_scale: float = float(payload.get("guidance_scale", 7.5))
         num_inference_steps: int = int(payload.get("num_inference_steps", 30))
         seed = payload.get("seed")
+        sd_max_side = payload.get("sd_max_side")
         if not image_b64 or not mask_b64:
             return {"error": "image_b64 and mask_b64 are required"}
         image_pil = _b64_to_image(image_b64)
@@ -108,6 +109,23 @@ def handler(event: Dict[str, Any]) -> Dict[str, Any]:
             image = Image.fromarray(img_arr.astype(np.uint8))
             mask = Image.fromarray(((mask_arr > 0).astype(np.uint8) * 255), mode="L")
             orig_w, orig_h = image.width, image.height
+
+            # Compute working size for SD: optional downscale and enforce multiples of 8
+            work_w, work_h = orig_w, orig_h
+            try:
+                if sd_max_side:
+                    ratio = float(sd_max_side) / float(max(orig_w, orig_h))
+                    ratio = ratio if ratio < 1.0 else 1.0
+                    work_w = int(orig_w * ratio)
+                    work_h = int(orig_h * ratio)
+            except Exception:
+                pass
+            # Enforce divisibility by 8
+            work_w = max(8, (work_w // 8) * 8)
+            work_h = max(8, (work_h // 8) * 8)
+            if (work_w, work_h) != (orig_w, orig_h):
+                image = image.resize((work_w, work_h), Image.LANCZOS)
+                mask = mask.resize((work_w, work_h), Image.NEAREST)
             import torch
             generator = torch.Generator(device=_device).manual_seed(int(seed)) if seed is not None else None
             if _device == "cuda" and torch.cuda.is_available():
@@ -120,8 +138,8 @@ def handler(event: Dict[str, Any]) -> Dict[str, Any]:
                         guidance_scale=guidance_scale,
                         num_inference_steps=num_inference_steps,
                         generator=generator,
-                        width=orig_w,
-                        height=orig_h,
+                        width=work_w,
+                        height=work_h,
                     ).images[0]
             else:
                 out = _sd_pipe(
@@ -132,8 +150,8 @@ def handler(event: Dict[str, Any]) -> Dict[str, Any]:
                     guidance_scale=guidance_scale,
                     num_inference_steps=num_inference_steps,
                     generator=generator,
-                    width=orig_w,
-                    height=orig_h,
+                    width=work_w,
+                    height=work_h,
                 ).images[0]
             out_arr = np.array(out)
             if out_arr.shape[0] != img_arr.shape[0] or out_arr.shape[1] != img_arr.shape[1]:
