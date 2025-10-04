@@ -1,0 +1,44 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+*.egg-info
+.env
+
+# Data / weights / cache
+weights/
+pretrained_models/*
+!pretrained_models/big-lama/**
+*.ckpt
+*.pt
+*.pth
+*.npz
+*.npy
+*.tar
+*.zip
+
+# Local artifacts
+*.log
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.mp4
+
+# Not needed for serverless
+example/
+app/
+script/
+nerf/
+pytracking/
+sttn/
+segment_anything/.git
+
+# OS files
+.DS_Store
+Thumbs.db

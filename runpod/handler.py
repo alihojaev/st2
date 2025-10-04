@@ -83,7 +83,6 @@ def _image_to_b64(img_arr: np.ndarray, format_: str = "PNG") -> str:
 def handler(event: Dict[str, Any]) -> Dict[str, Any]:
     # event expects: { "input": { "image_b64": str, "mask_b64": str, "invert_mask": bool, "backend": "lama"|"sd", "prompt": str, ... } }
     try:
-        init_model()
         payload = event.get("input") or {}
         image_b64 = payload.get("image_b64")
         mask_b64 = payload.get("mask_b64")
@@ -141,6 +140,8 @@ def handler(event: Dict[str, Any]) -> Dict[str, Any]:
                 out_arr = np.array(Image.fromarray(out_arr).resize((img_arr.shape[1], img_arr.shape[0]), Image.LANCZOS))
             return {"image_b64": _image_to_b64(out_arr)}
         else:
+            # Lazy initialize LaMa only when requested
+            init_model()
             result = inpaint_img_with_builded_lama(_model, img_arr, mask_arr, device=_device)
             return {"image_b64": _image_to_b64(result)}
     except Exception as e:
