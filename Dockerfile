@@ -36,7 +36,7 @@ RUN python -m pip install -e segment_anything
 
 EXPOSE 3000
 
-# Default CMD: Runpod Serverless handler (no blocking web server)
-CMD ["python", "-m", "runpod", "--handler-path", "runpod/handler.py"]
+# Default CMD: directly run the serverless handler
+CMD ["python", "runpod/handler.py"]
 
 
