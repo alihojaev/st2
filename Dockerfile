@@ -25,8 +25,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy repository
 COPY . /workspace
 
-# Install LaMa internal requirements first (they pin some libs)
+# Install LaMa dependencies (exclude heavy/unneeded ones for runtime)
 RUN python -m pip install --upgrade pip && \
+    sed -i '/^tensorflow$/d' lama/requirements.txt && \
+    sed -i 's/^opencv-python$/opencv-python-headless/' lama/requirements.txt || true && \
     python -m pip install -r lama/requirements.txt
 
 # Install API deps
