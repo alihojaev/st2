@@ -4,6 +4,7 @@ FROM pytorch/pytorch:2.3.1-cuda12.1-cudnn8-runtime
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
+    PYTHONPATH=/workspace \
     UVICORN_HOST=0.0.0.0 \
     UVICORN_PORT=3000 \
     LAMA_CONFIG=./lama/configs/prediction/default.yaml \
