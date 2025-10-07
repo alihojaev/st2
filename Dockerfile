@@ -10,7 +10,10 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     LAMA_CONFIG=./lama/configs/prediction/default.yaml \
     LAMA_CKPT=./pretrained_models/big-lama \
     SD_MODEL_ID=stabilityai/stable-diffusion-2-inpainting \
+    SD_LOCAL_DIR=/workspace/models/sd-inpaint \
     HF_HUB_ENABLE_HF_TRANSFER=1 \
+    HF_HOME=/workspace/huggingface \
+    TRANSFORMERS_CACHE=/workspace/huggingface \
     PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:128
 
 WORKDIR /workspace
@@ -40,6 +43,24 @@ RUN python -m pip install --upgrade pip setuptools wheel && \
         torchvision==0.20.1 \
         torchaudio==2.5.1 \
         xformers==0.0.27.post1 --upgrade --force-reinstall || true
+
+# Pre-download SD model into image to avoid runtime network issues
+ARG HF_TOKEN=""
+ENV HUGGING_FACE_HUB_TOKEN=${HF_TOKEN}
+RUN mkdir -p /workspace/models && \
+    python - <<'PY' || true
+import os, torch
+from diffusers import AutoPipelineForInpainting
+model_id=os.environ.get('SD_MODEL_ID','stabilityai/stable-diffusion-2-inpainting')
+target=os.environ.get('SD_LOCAL_DIR','/workspace/models/sd-inpaint')
+os.makedirs(target, exist_ok=True)
+try:
+    pipe=AutoPipelineForInpainting.from_pretrained(model_id, torch_dtype=torch.float16, use_safetensors=True, cache_dir=os.environ.get('HF_HOME'))
+    pipe.save_pretrained(target, safe_serialization=True)
+    print('Pre-downloaded SD model to', target)
+except Exception as e:
+    print('Skip predownload:', e)
+PY
 
 # Segment Anything as editable (used by repo)
 RUN python -m pip install -e segment_anything

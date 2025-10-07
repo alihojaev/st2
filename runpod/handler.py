@@ -40,8 +40,18 @@ def init_sd():
     from diffusers import AutoPipelineForInpainting
     import torch
     model_id = os.environ.get("SD_MODEL_ID", "stabilityai/stable-diffusion-2-inpainting")
+    local_dir = os.environ.get("SD_LOCAL_DIR")
     torch_dtype = torch.float16 if (_device == "cuda" and torch.cuda.is_available()) else torch.float32
-    _sd_pipe = AutoPipelineForInpainting.from_pretrained(model_id, torch_dtype=torch_dtype)
+    try:
+        _sd_pipe = AutoPipelineForInpainting.from_pretrained(
+            local_dir if (local_dir and os.path.isdir(local_dir)) else model_id,
+            torch_dtype=torch_dtype,
+            use_safetensors=True,
+            local_files_only=bool(local_dir and os.path.isdir(local_dir))
+        )
+    except Exception:
+        # Fallback to online fetch if local dir missing
+        _sd_pipe = AutoPipelineForInpainting.from_pretrained(model_id, torch_dtype=torch_dtype, use_safetensors=True)
     if _device == "cuda" and torch.cuda.is_available():
         _sd_pipe = _sd_pipe.to("cuda")
     else:
