@@ -4,6 +4,7 @@ FROM pytorch/pytorch:2.5.1-cuda12.4-cudnn9-runtime
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
     PYTHONPATH=/workspace \
     UVICORN_HOST=0.0.0.0 \
     UVICORN_PORT=3000 \
@@ -44,22 +45,27 @@ RUN python -m pip install --upgrade pip setuptools wheel && \
         torchaudio==2.5.1 \
         xformers==0.0.27.post1 --upgrade --force-reinstall || true
 
-# Pre-download SD model into image to avoid runtime network issues
+# Pre-download SD model snapshot into image to avoid runtime network issues
 ARG HF_TOKEN=""
 ENV HUGGING_FACE_HUB_TOKEN=${HF_TOKEN}
-RUN mkdir -p /workspace/models && \
-    python - <<'PY' || true
-import os, torch
-from diffusers import AutoPipelineForInpainting
-model_id=os.environ.get('SD_MODEL_ID','stabilityai/stable-diffusion-2-inpainting')
-target=os.environ.get('SD_LOCAL_DIR','/workspace/models/sd-inpaint')
-os.makedirs(target, exist_ok=True)
-try:
-    pipe=AutoPipelineForInpainting.from_pretrained(model_id, torch_dtype=torch.float16, use_safetensors=True, cache_dir=os.environ.get('HF_HOME'))
-    pipe.save_pretrained(target, safe_serialization=True)
-    print('Pre-downloaded SD model to', target)
-except Exception as e:
-    print('Skip predownload:', e)
+RUN mkdir -p "$HF_HOME" "$SD_LOCAL_DIR" && \
+    python - <<'PY'
+import os
+from huggingface_hub import snapshot_download
+
+model_id = os.environ.get('SD_MODEL_ID', 'stabilityai/stable-diffusion-2-inpainting')
+local_dir = os.environ.get('SD_LOCAL_DIR', '/workspace/models/sd-inpaint')
+hf_home = os.environ.get('HF_HOME')
+os.makedirs(local_dir, exist_ok=True)
+print(f"Downloading model {model_id} to {local_dir} ...", flush=True)
+snapshot_download(
+    repo_id=model_id,
+    local_dir=local_dir,
+    local_dir_use_symlinks=False,
+    resume_download=True,
+    cache_dir=hf_home,
+)
+print("Download complete.", flush=True)
 PY
 
 # Segment Anything as editable (used by repo)

@@ -56,21 +56,15 @@ def _load_sd_pipe_once():
         model_id = _get_env("SD_MODEL_ID", "stabilityai/stable-diffusion-2-inpainting")
         local_dir = _get_env("SD_LOCAL_DIR")
         torch_dtype = torch.float16 if (_device == "cuda" and torch.cuda.is_available()) else torch.float32
-        try:
-            _sd_pipe = StableDiffusionInpaintPipeline.from_pretrained(
-                local_dir if (local_dir and os.path.isdir(local_dir)) else model_id,
-                torch_dtype=torch_dtype,
-                safety_checker=None,
-                use_safetensors=True,
-                local_files_only=bool(local_dir and os.path.isdir(local_dir)),
-            )
-        except Exception:
-            _sd_pipe = StableDiffusionInpaintPipeline.from_pretrained(
-                model_id,
-                torch_dtype=torch_dtype,
-                safety_checker=None,
-                use_safetensors=True,
-            )
+        path = local_dir if (local_dir and os.path.isdir(local_dir)) else model_id
+        _sd_pipe = StableDiffusionInpaintPipeline.from_pretrained(
+            path,
+            torch_dtype=torch_dtype,
+            safety_checker=None,
+            use_safetensors=True,
+            local_files_only=os.path.isdir(path),
+            cache_dir=_get_env("HF_HOME"),
+        )
         if _device == "cuda" and torch.cuda.is_available():
             _sd_pipe = _sd_pipe.to("cuda")
         else:
