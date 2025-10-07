@@ -53,7 +53,7 @@ def _load_sd_pipe_once():
         import torch
         from diffusers import StableDiffusionInpaintPipeline
 
-        model_id = _get_env("SD_MODEL_ID", "runwayml/stable-diffusion-inpainting")
+        model_id = _get_env("SD_MODEL_ID", "stabilityai/stable-diffusion-2-inpainting")
         torch_dtype = torch.float16 if (_device == "cuda" and torch.cuda.is_available()) else torch.float32
         _sd_pipe = StableDiffusionInpaintPipeline.from_pretrained(
             model_id,

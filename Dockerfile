@@ -9,7 +9,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     UVICORN_PORT=3000 \
     LAMA_CONFIG=./lama/configs/prediction/default.yaml \
     LAMA_CKPT=./pretrained_models/big-lama \
-    SD_MODEL_ID=runwayml/stable-diffusion-inpainting \
+    SD_MODEL_ID=stabilityai/stable-diffusion-2-inpainting \
     HF_HUB_ENABLE_HF_TRANSFER=1 \
     PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:128
 

@@ -39,7 +39,7 @@ def init_sd():
         return
     from diffusers import AutoPipelineForInpainting
     import torch
-    model_id = os.environ.get("SD_MODEL_ID", "runwayml/stable-diffusion-inpainting")
+    model_id = os.environ.get("SD_MODEL_ID", "stabilityai/stable-diffusion-2-inpainting")
     torch_dtype = torch.float16 if (_device == "cuda" and torch.cuda.is_available()) else torch.float32
     _sd_pipe = AutoPipelineForInpainting.from_pretrained(model_id, torch_dtype=torch_dtype)
     if _device == "cuda" and torch.cuda.is_available():
