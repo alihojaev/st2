@@ -7,16 +7,15 @@ import numpy as np
 from PIL import Image
 import runpod
 
-from lama_inpaint import build_lama_model, inpaint_img_with_builded_lama
-
 
 _model = None
 _device = "cuda"
 _sd_pipe = None
+_lama_inpaint_fn = None  # set lazily to avoid heavy imports at startup
 
 
 def init_model():
-    global _model, _device
+    global _model, _device, _lama_inpaint_fn
     if _model is not None:
         return
     lama_config = os.environ.get("LAMA_CONFIG", "./lama/configs/prediction/default.yaml")
@@ -28,6 +27,9 @@ def init_model():
         _device = "cuda" if torch.cuda.is_available() else "cpu"
     except Exception:
         _device = "cpu"
+    # Lazy import to prevent Hydra/PL from loading at startup unless needed
+    from lama_inpaint import build_lama_model, inpaint_img_with_builded_lama
+    _lama_inpaint_fn = inpaint_img_with_builded_lama
     _model = build_lama_model(lama_config, lama_ckpt, device=_device)
 
 
@@ -160,7 +162,7 @@ def handler(event: Dict[str, Any]) -> Dict[str, Any]:
         else:
             # Lazy initialize LaMa only when requested
             init_model()
-            result = inpaint_img_with_builded_lama(_model, img_arr, mask_arr, device=_device)
+            result = _lama_inpaint_fn(_model, img_arr, mask_arr, device=_device)
             return {"image_b64": _image_to_b64(result)}
     except Exception as e:
         return {"error": str(e)}
