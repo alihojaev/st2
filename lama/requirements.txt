@@ -5,6 +5,9 @@ easydict==1.9.0
 scikit-image
 scikit-learn
 opencv-python
+# NOTE: torchvision ops like NMS cause import errors on CPU-only builds.
+# We do not pin torchvision here; it is installed in the top-level Dockerfile
+# with a CUDA-enabled wheel matching the runtime PyTorch to avoid missing ops.
 tensorflow
 joblib
 matplotlib

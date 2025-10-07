@@ -36,7 +36,10 @@ RUN python -m pip install --upgrade pip && \
 # Install API deps (do not reinstall torch; it comes from the base image with CUDA)
 RUN python -m pip install --upgrade pip setuptools wheel && \
     python -m pip install -r requirements-api.txt && \
-    python -m pip install --extra-index-url https://download.pytorch.org/whl/cu124 xformers==0.0.27.post1 || true
+    python -m pip install --extra-index-url https://download.pytorch.org/whl/cu124 \
+        torchvision==0.20.1 \
+        torchaudio==2.5.1 \
+        xformers==0.0.27.post1 --upgrade --force-reinstall || true
 
 # Segment Anything as editable (used by repo)
 RUN python -m pip install -e segment_anything
