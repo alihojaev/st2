@@ -1,5 +1,5 @@
-# Base image with CUDA and PyTorch (suitable for Runpod GPU). Adjust if needed.
-FROM pytorch/pytorch:2.3.1-cuda12.1-cudnn8-runtime
+# Base image pinned to CUDA 11.8 for broad GPU compatibility on Runpod
+FROM pytorch/pytorch:2.1.2-cuda11.8-cudnn8-runtime
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -31,7 +31,7 @@ RUN python -m pip install --upgrade pip && \
     sed -i 's/^opencv-python$/opencv-python-headless/' lama/requirements.txt || true && \
     python -m pip install -r lama/requirements.txt
 
-# Install API deps
+# Install API deps (do not reinstall torch; it comes from the base image with CUDA)
 RUN python -m pip install -r requirements-api.txt
 
 # Segment Anything as editable (used by repo)
